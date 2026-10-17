@@ -43,6 +43,10 @@
         <module>services/promotion-service</module>
         <module>services/payment-service</module>
         <module>services/order-service</module>
+        <module>services/fulfillment-service</module>
+        <module>services/shipping-service</module>
+        <module>services/notification-service</module>
+        <module>services/returns-service</module>
     </modules>
 
     <dependencyManagement>
