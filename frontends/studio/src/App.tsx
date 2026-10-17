@@ -3,10 +3,12 @@ import { ArchitectureExplorer } from './components/ArchitectureExplorer';
 import { RequestXRay } from './components/RequestXRay';
 import { PatternAcademy } from './components/PatternAcademy';
 import { DataAndKafkaExplorer } from './components/DataAndKafkaExplorer';
-import { Activity, Layers, Radio, BookOpen, Database, ExternalLink, ShieldCheck } from 'lucide-react';
+import { FailureLaboratory } from './components/FailureLaboratory';
+import { ObservabilityWorkbench } from './components/ObservabilityWorkbench';
+import { Activity, Layers, Radio, BookOpen, Database, ExternalLink, ShieldAlert, BarChart3 } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'architecture' | 'xray' | 'patterns' | 'datakafka'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'xray' | 'patterns' | 'datakafka' | 'failurelab' | 'observability'>('architecture');
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#030712' }}>
@@ -55,7 +57,7 @@ export const App: React.FC = () => {
               className={`nav-tab ${activeTab === 'architecture' ? 'active' : ''}`}
             >
               <Layers size={16} />
-              <span>Architecture Explorer</span>
+              <span>Architecture</span>
             </button>
 
             <button
@@ -79,7 +81,25 @@ export const App: React.FC = () => {
               className={`nav-tab ${activeTab === 'datakafka' ? 'active' : ''}`}
             >
               <Database size={16} />
-              <span>Data & Kafka Bus</span>
+              <span>Data & Kafka</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('failurelab')}
+              className={`nav-tab ${activeTab === 'failurelab' ? 'active' : ''}`}
+              style={{ color: activeTab === 'failurelab' ? '#fb7185' : undefined }}
+            >
+              <ShieldAlert size={16} color={activeTab === 'failurelab' ? '#fb7185' : undefined} />
+              <span>Failure Lab</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('observability')}
+              className={`nav-tab ${activeTab === 'observability' ? 'active' : ''}`}
+              style={{ color: activeTab === 'observability' ? '#f59e0b' : undefined }}
+            >
+              <BarChart3 size={16} color={activeTab === 'observability' ? '#f59e0b' : undefined} />
+              <span>Observability</span>
             </button>
           </nav>
 
@@ -106,6 +126,8 @@ export const App: React.FC = () => {
         {activeTab === 'xray' && <RequestXRay />}
         {activeTab === 'patterns' && <PatternAcademy />}
         {activeTab === 'datakafka' && <DataAndKafkaExplorer />}
+        {activeTab === 'failurelab' && <FailureLaboratory />}
+        {activeTab === 'observability' && <ObservabilityWorkbench />}
       </main>
 
       {/* Footer */}

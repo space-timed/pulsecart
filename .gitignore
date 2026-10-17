@@ -29,6 +29,8 @@ dist/
 build/
 **/build/
 .gradle/
+*.tsbuildinfo
+**/*.tsbuildinfo
 
 # Runtime data
 logs/
