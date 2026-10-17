@@ -1,0 +1,18 @@
+apiVersion: v2
+name: pulsecart
+description: Production-Grade Microservices E-Commerce Platform & Architecture Laboratory
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+keywords:
+  - e-commerce
+  - microservices
+  - spring-boot
+  - kafka
+  - postgresql
+  - redis
+  - react
+  - distributed-saga
+maintainers:
+  - name: PulseCart Platform Engineering Team
+    url: https://github.com/space-timed/pulsecart

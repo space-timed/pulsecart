@@ -5,10 +5,11 @@ import { PatternAcademy } from './components/PatternAcademy';
 import { DataAndKafkaExplorer } from './components/DataAndKafkaExplorer';
 import { FailureLaboratory } from './components/FailureLaboratory';
 import { ObservabilityWorkbench } from './components/ObservabilityWorkbench';
-import { Activity, Layers, Radio, BookOpen, Database, ExternalLink, ShieldAlert, BarChart3 } from 'lucide-react';
+import { KubernetesExplorer } from './components/KubernetesExplorer';
+import { Activity, Layers, Radio, BookOpen, Database, ExternalLink, ShieldAlert, BarChart3, Server } from 'lucide-react';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'architecture' | 'xray' | 'patterns' | 'datakafka' | 'failurelab' | 'observability'>('architecture');
+  const [activeTab, setActiveTab] = useState<'architecture' | 'xray' | 'patterns' | 'datakafka' | 'failurelab' | 'observability' | 'kubernetes'>('architecture');
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#030712' }}>
@@ -101,6 +102,15 @@ export const App: React.FC = () => {
               <BarChart3 size={16} color={activeTab === 'observability' ? '#f59e0b' : undefined} />
               <span>Observability</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('kubernetes')}
+              className={`nav-tab ${activeTab === 'kubernetes' ? 'active' : ''}`}
+              style={{ color: activeTab === 'kubernetes' ? '#38bdf8' : undefined }}
+            >
+              <Server size={16} color={activeTab === 'kubernetes' ? '#38bdf8' : undefined} />
+              <span>Kubernetes</span>
+            </button>
           </nav>
 
           {/* Right Action: Link to Store */}
@@ -128,6 +138,7 @@ export const App: React.FC = () => {
         {activeTab === 'datakafka' && <DataAndKafkaExplorer />}
         {activeTab === 'failurelab' && <FailureLaboratory />}
         {activeTab === 'observability' && <ObservabilityWorkbench />}
+        {activeTab === 'kubernetes' && <KubernetesExplorer />}
       </main>
 
       {/* Footer */}

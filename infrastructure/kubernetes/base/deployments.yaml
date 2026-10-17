@@ -1,0 +1,865 @@
+# =============================================================================
+# PulseCart Microservices Kubernetes Deployments
+# =============================================================================
+
+# 1. API Gateway
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: api-gateway
+    app.kubernetes.io/component: gateway
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: api-gateway
+    spec:
+      containers:
+        - name: api-gateway
+          image: pulsecart/api-gateway:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: SERVER_PORT
+              value: "8080"
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 25
+            periodSeconds: 10
+
+---
+# 2. Customer Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: customer-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: customer-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: customer-service
+    spec:
+      containers:
+        - name: customer-service
+          image: pulsecart/customer-service:1.0.0
+          ports:
+            - containerPort: 8081
+          env:
+            - name: SERVER_PORT
+              value: "8081"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_customer?currentSchema=pulsecart_customer"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8081
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 3. Catalog Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: catalog-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: catalog-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: catalog-service
+    spec:
+      containers:
+        - name: catalog-service
+          image: pulsecart/catalog-service:1.0.0
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SERVER_PORT
+              value: "8082"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_catalog?currentSchema=pulsecart_catalog"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8082
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 4. Pricing Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pricing-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: pricing-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pricing-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pricing-service
+    spec:
+      containers:
+        - name: pricing-service
+          image: pulsecart/pricing-service:1.0.0
+          ports:
+            - containerPort: 8083
+          env:
+            - name: SERVER_PORT
+              value: "8083"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_pricing?currentSchema=pulsecart_pricing"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8083
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 5. Inventory Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inventory-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: inventory-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: inventory-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: inventory-service
+    spec:
+      containers:
+        - name: inventory-service
+          image: pulsecart/inventory-service:1.0.0
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SERVER_PORT
+              value: "8084"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_inventory?currentSchema=pulsecart_inventory"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 6. Cart Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cart-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: cart-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cart-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cart-service
+    spec:
+      containers:
+        - name: cart-service
+          image: pulsecart/cart-service:1.0.0
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SERVER_PORT
+              value: "8085"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_cart?currentSchema=pulsecart_cart"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8085
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 7. Payment Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: payment-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: payment-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: payment-service
+    spec:
+      containers:
+        - name: payment-service
+          image: pulsecart/payment-service:1.0.0
+          ports:
+            - containerPort: 8086
+          env:
+            - name: SERVER_PORT
+              value: "8086"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_payment?currentSchema=pulsecart_payment"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 400m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8086
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 8. Order Service (Saga Coordinator)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: order-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: order-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: order-service
+    spec:
+      containers:
+        - name: order-service
+          image: pulsecart/order-service:1.0.0
+          ports:
+            - containerPort: 8087
+          env:
+            - name: SERVER_PORT
+              value: "8087"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_order?currentSchema=pulsecart_order"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8087
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 9. Fulfillment Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fulfillment-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: fulfillment-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: fulfillment-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: fulfillment-service
+    spec:
+      containers:
+        - name: fulfillment-service
+          image: pulsecart/fulfillment-service:1.0.0
+          ports:
+            - containerPort: 8088
+          env:
+            - name: SERVER_PORT
+              value: "8088"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_fulfillment?currentSchema=pulsecart_fulfillment"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8088
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 10. Shipping Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: shipping-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: shipping-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: shipping-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: shipping-service
+    spec:
+      containers:
+        - name: shipping-service
+          image: pulsecart/shipping-service:1.0.0
+          ports:
+            - containerPort: 8089
+          env:
+            - name: SERVER_PORT
+              value: "8089"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_shipping?currentSchema=pulsecart_shipping"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8089
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 11. Notification Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: notification-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: notification-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: pulsecart/notification-service:1.0.0
+          ports:
+            - containerPort: 8090
+          env:
+            - name: SERVER_PORT
+              value: "8090"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_notification?currentSchema=pulsecart_notification"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8090
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 12. Returns Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: returns-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: returns-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: returns-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: returns-service
+    spec:
+      containers:
+        - name: returns-service
+          image: pulsecart/returns-service:1.0.0
+          ports:
+            - containerPort: 8091
+          env:
+            - name: SERVER_PORT
+              value: "8091"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_returns?currentSchema=pulsecart_returns"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8091
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 13. Search Service (CQRS Query Projection)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: search-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: search-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: search-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: search-service
+    spec:
+      containers:
+        - name: search-service
+          image: pulsecart/search-service:1.0.0
+          ports:
+            - containerPort: 8092
+          env:
+            - name: SERVER_PORT
+              value: "8092"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_search?currentSchema=pulsecart_search"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8092
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 14. Analytics Service (Sales Telemetry Rollup)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: analytics-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: analytics-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: analytics-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: analytics-service
+    spec:
+      containers:
+        - name: analytics-service
+          image: pulsecart/analytics-service:1.0.0
+          ports:
+            - containerPort: 8093
+          env:
+            - name: SERVER_PORT
+              value: "8093"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_analytics?currentSchema=pulsecart_analytics"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8093
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 15. Promotion Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: promotion-service
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: promotion-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: promotion-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: promotion-service
+    spec:
+      containers:
+        - name: promotion-service
+          image: pulsecart/promotion-service:1.0.0
+          ports:
+            - containerPort: 8094
+          env:
+            - name: SERVER_PORT
+              value: "8094"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://pulsecart-postgres:5432/pulsecart_promotion?currentSchema=pulsecart_promotion"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "pulsecart"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 300m
+              memory: 384Mi
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8094
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+---
+# 16. Store UI Frontend
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: store-ui
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: store-ui
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: store-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: store-ui
+    spec:
+      containers:
+        - name: store-ui
+          image: pulsecart/store-ui:1.0.0
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+
+---
+# 17. Studio UI Architecture Laboratory
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: studio-ui
+  namespace: pulsecart
+  labels:
+    app.kubernetes.io/name: studio-ui
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: studio-ui
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: studio-ui
+    spec:
+      containers:
+        - name: studio-ui
+          image: pulsecart/studio-ui:1.0.0
+          ports:
+            - containerPort: 3001
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi

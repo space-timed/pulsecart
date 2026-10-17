@@ -1,0 +1,17 @@
+{{- range $key, $service := .Values.services }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ $service.name }}-pdb
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $service.name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    {{- include "pulsecart.labels" $ | nindent 4 }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $service.name }}
+{{- end }}

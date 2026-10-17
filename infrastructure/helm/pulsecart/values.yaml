@@ -1,0 +1,269 @@
+# PulseCart Production Helm Configuration Values
+
+global:
+  namespace: pulsecart
+  environment: production
+  imageRegistry: docker.io/pulsecart
+  imagePullPolicy: IfNotPresent
+
+# =============================================================================
+# Shared Backing Services Configuration
+# =============================================================================
+infrastructure:
+  postgres:
+    host: pulsecart-postgres
+    port: 5432
+    username: pulsecart
+    sslMode: disable
+  redis:
+    host: pulsecart-redis
+    port: 6379
+  kafka:
+    bootstrapServers: pulsecart-kafka:9092
+
+# =============================================================================
+# Ingress Controller Configuration
+# =============================================================================
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "15"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+  host: pulsecart.local
+  tls: []
+
+# =============================================================================
+# Microservices Fleet Configurations
+# =============================================================================
+services:
+  gateway:
+    name: api-gateway
+    replicas: 2
+    port: 8080
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 75
+
+  customer:
+    name: customer-service
+    replicas: 2
+    port: 8081
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  catalog:
+    name: catalog-service
+    replicas: 2
+    port: 8082
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 75
+
+  pricing:
+    name: pricing-service
+    replicas: 2
+    port: 8083
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  inventory:
+    name: inventory-service
+    replicas: 2
+    port: 8084
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 6
+      targetCPUUtilizationPercentage: 70
+
+  cart:
+    name: cart-service
+    replicas: 2
+    port: 8085
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  payment:
+    name: payment-service
+    replicas: 2
+    port: 8086
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 400m
+        memory: 512Mi
+
+  order:
+    name: order-service
+    replicas: 2
+    port: 8087
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 8
+      targetCPUUtilizationPercentage: 70
+
+  fulfillment:
+    name: fulfillment-service
+    replicas: 2
+    port: 8088
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  shipping:
+    name: shipping-service
+    replicas: 2
+    port: 8089
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  notification:
+    name: notification-service
+    replicas: 2
+    port: 8090
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  returns:
+    name: returns-service
+    replicas: 2
+    port: 8091
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  search:
+    name: search-service
+    replicas: 2
+    port: 8092
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  analytics:
+    name: analytics-service
+    replicas: 2
+    port: 8093
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+  promotion:
+    name: promotion-service
+    replicas: 2
+    port: 8094
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 300m
+        memory: 384Mi
+
+# =============================================================================
+# Frontends
+# =============================================================================
+frontends:
+  store:
+    name: store-ui
+    replicas: 2
+    port: 3000
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+
+  studio:
+    name: studio-ui
+    replicas: 1
+    port: 3001
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi

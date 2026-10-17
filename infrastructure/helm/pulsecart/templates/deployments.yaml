@@ -1,0 +1,146 @@
+{{- range $key, $service := .Values.services }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $service.name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $service.name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: backend
+    {{- include "pulsecart.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ $service.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $service.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $service.name }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "{{ $service.port }}"
+    spec:
+      terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+      containers:
+        - name: {{ $service.name }}
+          image: "{{ $.Values.global.imageRegistry }}/{{ $service.name }}:{{ $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $service.port }}
+              protocol: TCP
+          env:
+            - name: SERVER_PORT
+              value: "{{ $service.port }}"
+            - name: JAVA_TOOL_OPTIONS
+              value: "-XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ $.Values.infrastructure.postgres.host }}:{{ $.Values.infrastructure.postgres.port }}/pulsecart_{{ $key }}?currentSchema=pulsecart_{{ $key }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "{{ $.Values.infrastructure.postgres.username }}"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: pulsecart-secrets
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: pulsecart-config
+          resources:
+            {{- toYaml $service.resources | nindent 12 }}
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 4
+            failureThreshold: 20
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 25
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+{{- end }}
+
+{{- range $key, $frontend := .Values.frontends }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $frontend.name }}
+  namespace: {{ $.Values.global.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $frontend.name }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/component: frontend
+    {{- include "pulsecart.labels" $ | nindent 4 }}
+spec:
+  replicas: {{ $frontend.replicas }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ $frontend.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ $frontend.name }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: {{ $frontend.name }}
+          image: "{{ $.Values.global.imageRegistry }}/{{ $frontend.name }}:{{ $.Chart.AppVersion }}"
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ $frontend.port }}
+              protocol: TCP
+          resources:
+            {{- toYaml $frontend.resources | nindent 12 }}
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+{{- end }}
