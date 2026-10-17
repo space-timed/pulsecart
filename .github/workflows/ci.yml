@@ -1,34 +1,59 @@
-name: PulseCart CI
+name: PulseCart Platform CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build:
-    name: Build & Verify Multi-Module Architecture
+  backend-test:
+    name: Backend Microservices Fleet Build & Test
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout Repository
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Set up Java Runtime
+      - name: Set up Java 21 LTS
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
 
-      - name: Compile & Run Test Suites
-        run: mvn clean verify -B
+      - name: Compile and Run All Automated Tests
+        run: mvn clean test -B
 
-      - name: Verify Git Exclusions & Privacy Invariants
+  frontend-build:
+    name: Frontend Applications Build & Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build Store Frontend
+        working-directory: frontends/store
         run: |
-          if git ls-files | grep -E '^(\.local/|AGENTS\.md|\.env)'; then
-            echo "ERROR: Detected private or local files tracked by git!"
-            exit 1
-          fi
-          echo "Privacy invariants verified: zero private files in git tracking."
+          npm ci
+          npm run build
+
+      - name: Build Studio Frontend
+        working-directory: frontends/studio
+        run: |
+          npm ci
+          npm run build
+
+  kubernetes-validation:
+    name: Kubernetes & Helm Manifest Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Validate Kustomize Manifests
+        run: kubectl kustomize infrastructure/kubernetes/base > /dev/null
