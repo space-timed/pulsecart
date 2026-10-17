@@ -35,6 +35,11 @@
         <module>libraries/event-contracts</module>
         <module>libraries/observability</module>
         <module>services/api-gateway</module>
+        <module>services/customer-service</module>
+        <module>services/catalog-service</module>
+        <module>services/pricing-service</module>
+        <module>services/inventory-service</module>
+        <module>services/cart-service</module>
     </modules>
 
     <dependencyManagement>
