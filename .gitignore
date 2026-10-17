@@ -33,9 +33,9 @@ build/
 **/*.tsbuildinfo
 
 # Runtime data
-logs/
-tmp/
-data/
+/logs/
+/tmp/
+/data/
 *.log
 
 # Test & report outputs
