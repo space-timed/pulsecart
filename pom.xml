@@ -47,6 +47,8 @@
         <module>services/shipping-service</module>
         <module>services/notification-service</module>
         <module>services/returns-service</module>
+        <module>services/search-service</module>
+        <module>services/analytics-service</module>
     </modules>
 
     <dependencyManagement>
