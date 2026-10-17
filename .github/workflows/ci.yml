@@ -1,0 +1,34 @@
+name: PulseCart CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    name: Build & Verify Multi-Module Architecture
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java Runtime
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compile & Run Test Suites
+        run: mvn clean verify -B
+
+      - name: Verify Git Exclusions & Privacy Invariants
+        run: |
+          if git ls-files | grep -E '^(\.local/|AGENTS\.md|\.env)'; then
+            echo "ERROR: Detected private or local files tracked by git!"
+            exit 1
+          fi
+          echo "Privacy invariants verified: zero private files in git tracking."

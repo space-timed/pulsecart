@@ -1,0 +1,96 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: customer-service
+          uri: ${SERVICES_CUSTOMER_URL:http://localhost:8081}
+          predicates:
+            - Path=/api/v1/customers/**
+
+        - id: catalog-service
+          uri: ${SERVICES_CATALOG_URL:http://localhost:8082}
+          predicates:
+            - Path=/api/v1/catalog/**,/api/v1/products/**,/api/v1/categories/**
+
+        - id: pricing-service
+          uri: ${SERVICES_PRICING_URL:http://localhost:8083}
+          predicates:
+            - Path=/api/v1/prices/**
+
+        - id: promotion-service
+          uri: ${SERVICES_PROMOTION_URL:http://localhost:8084}
+          predicates:
+            - Path=/api/v1/promotions/**,/api/v1/coupons/**
+
+        - id: inventory-service
+          uri: ${SERVICES_INVENTORY_URL:http://localhost:8085}
+          predicates:
+            - Path=/api/v1/inventory/**
+
+        - id: cart-service
+          uri: ${SERVICES_CART_URL:http://localhost:8086}
+          predicates:
+            - Path=/api/v1/cart/**
+
+        - id: order-service
+          uri: ${SERVICES_ORDER_URL:http://localhost:8087}
+          predicates:
+            - Path=/api/v1/orders/**,/api/v1/checkout/**
+
+        - id: payment-service
+          uri: ${SERVICES_PAYMENT_URL:http://localhost:8088}
+          predicates:
+            - Path=/api/v1/payments/**
+
+        - id: fulfillment-service
+          uri: ${SERVICES_FULFILLMENT_URL:http://localhost:8089}
+          predicates:
+            - Path=/api/v1/fulfillment/**
+
+        - id: shipping-service
+          uri: ${SERVICES_SHIPPING_URL:http://localhost:8090}
+          predicates:
+            - Path=/api/v1/shipments/**
+
+        - id: notification-service
+          uri: ${SERVICES_NOTIFICATION_URL:http://localhost:8091}
+          predicates:
+            - Path=/api/v1/notifications/**
+
+        - id: search-service
+          uri: ${SERVICES_SEARCH_URL:http://localhost:8092}
+          predicates:
+            - Path=/api/v1/search/**
+
+        - id: returns-service
+          uri: ${SERVICES_RETURNS_URL:http://localhost:8093}
+          predicates:
+            - Path=/api/v1/returns/**
+
+        - id: analytics-service
+          uri: ${SERVICES_ANALYTICS_URL:http://localhost:8094}
+          predicates:
+            - Path=/api/v1/analytics/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

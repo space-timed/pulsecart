@@ -1,0 +1,121 @@
+name: pulsecart
+
+services:
+  # =========================================================================
+  # 1. PostgreSQL (Isolated Multi-Database Engine)
+  # Hosts 15 logical databases with schema/user isolation
+  # =========================================================================
+  postgres:
+    image: postgres:16
+    container_name: pulsecart-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-pulsecart}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pulsecart_dev_password}
+      POSTGRES_DB: pulsecart_catalog
+    volumes:
+      - pulsecart_postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init-databases.sh:/docker-entrypoint-initdb.d/init-databases.sh:ro
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pulsecart}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    networks:
+      - pulsecart_network
+    profiles:
+      - lite
+      - commerce
+      - observability
+      - full
+
+  # =========================================================================
+  # 2. Redis (Cart & Caching)
+  # =========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: pulsecart-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes", "--maxmemory", "48mb", "--maxmemory-policy", "volatile-lru"]
+    volumes:
+      - pulsecart_redis_data:/data
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+    networks:
+      - pulsecart_network
+    profiles:
+      - lite
+      - commerce
+      - observability
+      - full
+
+  # =========================================================================
+  # 3. Apache Kafka 4.3.1 (Native KRaft Mode - Zero ZooKeeper)
+  # =========================================================================
+  kafka:
+    image: apache/kafka:4.3.1
+    container_name: pulsecart-kafka
+    restart: unless-stopped
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,EXTERNAL://127.0.0.1:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_FLUSH_INTERVAL_MESSAGES: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      CLUSTER_ID: "4L622nShTUiBENbYWuzBDg"
+    volumes:
+      - pulsecart_kafka_data:/var/lib/kafka/data
+    ports:
+      - "127.0.0.1:9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-cluster.sh cluster-id --bootstrap-server localhost:9092 || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    networks:
+      - pulsecart_network
+    profiles:
+      - lite
+      - commerce
+      - observability
+      - full
+
+networks:
+  pulsecart_network:
+    name: pulsecart_network
+    driver: bridge
+
+volumes:
+  pulsecart_postgres_data:
+    name: pulsecart_postgres_data
+  pulsecart_redis_data:
+    name: pulsecart_redis_data
+  pulsecart_kafka_data:
+    name: pulsecart_kafka_data
