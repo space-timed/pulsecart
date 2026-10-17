@@ -1,0 +1,46 @@
+# Private Antigravity project instructions
+/AGENTS.md
+/GEMINI.md
+
+# Private development memory
+/.local/
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.local.env
+/secrets/
+
+# IDE and machine-specific files
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+
+# Build outputs
+target/
+**/target/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+build/
+**/build/
+.gradle/
+
+# Runtime data
+logs/
+tmp/
+data/
+*.log
+
+# Test & report outputs
+coverage/
+.nyc_output/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+Desktop.ini
